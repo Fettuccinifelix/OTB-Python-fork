@@ -1,7 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
 
-
+# individual plots
 class Track:
     def __init__(self, title, frequency, num_channels, offset, conv_fact, plot_time=1):
         self.title = title

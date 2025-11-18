@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtCore
 
-
+# button for starting/stopping recording
 class ControlWindow(QtWidgets.QWidget):
     start_clicked = QtCore.pyqtSignal()
     stop_clicked = QtCore.pyqtSignal()
@@ -9,7 +9,7 @@ class ControlWindow(QtWidgets.QWidget):
         super().__init__()
 
         self.setWindowTitle("Sessantaquattro+ Controls")
-        self.setFixedSize(250, 120)
+        self.setFixedSize(500, 240)
 
         layout = QtWidgets.QVBoxLayout()
 

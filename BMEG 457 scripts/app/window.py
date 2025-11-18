@@ -5,7 +5,7 @@ from app.config import Config
 from app.track import Track
 from app.data_receiver import DataReceiverThread
 
-
+# window for plots
 class SoundtrackWindow(QtWidgets.QWidget):
     def __init__(self, device):
         super().__init__()

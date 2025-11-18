@@ -46,22 +46,68 @@ class SessantaquattroPlus:
 
         print(format(Command, "016b"))
         return Command
+    
 
-    def start_server(self):
+    def is_connected_to_device_network(self, device_network_prefix="192.168.1"):
+        """Check if connected to the device's WiFi network"""
+        try:
+            # Get the actual IP being used for network communication
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))  # Doesn't actually send data
+            local_ip = s.getsockname()[0]
+            s.close()
+            
+            print(f"Current IP: {local_ip}")
+            
+            if not local_ip.startswith(device_network_prefix):
+                print(f"ERROR: Not connected to device network (expected {device_network_prefix}x)")
+                return False
+            
+            return True
+        except Exception as e:
+            print(f"Error checking network: {e}")
+            return False
+        
+    def start_server(self, connection_timeout=10):
+        # Pre-flight checks
+        if not self.is_connected_to_device_network():
+            print("Please connect to the Sessantaquattroplus device's WiFi network first")
+            sys.exit(1)
+        
         command = self.create_command()
         try:
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            
+            # Set a timeout for accept() to prevent indefinite hanging
+            self.server_socket.settimeout(connection_timeout)
+            
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(1)
             print(f"Listening on {self.host}:{self.port}...")
-
-            self.client_socket, addr = self.server_socket.accept()
-            print(f"Connected to {addr}")
-
-            self.client_socket.send(command.to_bytes(2, "big", signed=True))
-
+            print(f"Waiting for device connection (timeout: {connection_timeout}s)...")
+            
+            try:
+                self.client_socket, addr = self.server_socket.accept()
+                # Remove timeout for ongoing communication
+                self.client_socket.settimeout(None)
+                print(f"Connected to {addr}")
+                
+                self.client_socket.send(command.to_bytes(2, "big", signed=True))
+                
+            except socket.timeout:
+                print(f"ERROR: Device did not connect within {connection_timeout} seconds")
+                print("Make sure:")
+                print("1. You're connected to the device's WiFi")
+                print("2. The device is powered on and in pairing mode")
+                print("3. No firewall is blocking the connection")
+                self.server_socket.close()
+                sys.exit(1)
+                
         except socket.error as e:
             print(f"Server error: {e}")
+            if self.server_socket:
+                self.server_socket.close()
             sys.exit(1)
 
     def stop_server(self):
